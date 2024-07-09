@@ -4,6 +4,14 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 
+/*
+ * 
+ * The connection manager class 
+ * 
+ * Used to connect the Java code to MySQL through JDBC
+ * 
+ */
+
 public class ConnectionManager {
 	
 	private static final String URL = "jdbc:mysql://localhost:3306/chef_db?serverTimezone=EST5EDT";
@@ -30,6 +38,7 @@ public class ConnectionManager {
 		return connection;
 	}
 
+	// main method is used to make sure the connection is working as expected
 	public static void main(String[] args) {
 
 		Connection conn = null;
