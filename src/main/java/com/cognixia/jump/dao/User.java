@@ -66,7 +66,4 @@ public class User {
 		return "User [userID=" + userID + ", username=" + username + ", passwordHash=" + passwordHash + ", isAdmin="
 				+ isAdmin + "]";
 	}
-	
-	
-
 }

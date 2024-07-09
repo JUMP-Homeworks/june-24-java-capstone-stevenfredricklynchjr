@@ -21,7 +21,7 @@ public interface UserDAO {
 	public void establishConnection() throws ClassNotFoundException, SQLException;
 	
 	// ensure the connection is closed
-	public void closeConnection() throws SQLException ;
+	public void closeConnection() throws SQLException;
 	
 	// return a list containing all registered users
 	public List<User> getAllUsers() throws SQLException;
