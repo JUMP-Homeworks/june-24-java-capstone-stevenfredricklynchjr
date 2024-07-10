@@ -14,7 +14,7 @@ import java.sql.SQLException;
 
 public class ConnectionManager {
 	
-	private static final String URL = "jdbc:mysql://localhost:3306/chef_db?serverTimezone=EST5EDT";
+	private static final String URL = "jdbc:mysql://localhost:3306/tracker_db?serverTimezone=EST5EDT";
 	private static final String USERNAME = "root";
 	private static final String PASSWORD = "Root@123"; 
 	

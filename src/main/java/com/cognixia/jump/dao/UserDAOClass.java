@@ -20,6 +20,7 @@ import com.cognixia.jump.util.PasswordUtil;
  * Used to implement methods from the UserDAO interface
  * 
  */
+
 public class UserDAOClass implements UserDAO{
 	
 	private Connection conn = null;
@@ -235,7 +236,7 @@ public class UserDAOClass implements UserDAO{
 	public boolean updateUser(User user) throws SQLException {
 		try {
 			// set up prepared statement to update a user's info
-			PreparedStatement pstmt = conn.prepareStatement("UPDATE users SET username = ?, password_hash = ?, is_admin = ?, WHERE user_id = ?");
+			PreparedStatement pstmt = conn.prepareStatement("UPDATE users SET username = ?, password_hash = ?, is_admin = ? WHERE user_id = ?");
 			pstmt.setString(1,  user.getUsername());
 			pstmt.setString(2,  user.getPasswordHash());
 			pstmt.setBoolean(3,  user.getIsAdmin());

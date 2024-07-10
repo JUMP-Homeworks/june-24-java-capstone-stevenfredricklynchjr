@@ -3,6 +3,8 @@ package com.cognixia.jump.dao;
 import java.sql.SQLException;
 import java.util.List;
 
+import com.cognixia.jump.dao.Topic.Category;
+import com.cognixia.jump.exception.TopicNotCreatedException;
 import com.cognixia.jump.exception.TopicNotFoundException;
 
 /*
@@ -26,7 +28,7 @@ public interface TopicDAO {
 	public List<Topic> getAllTopics() throws SQLException;
 	
 	// return a list of all topics in a given category
-    public List<Topic> getTopicsByCategory(Topic.Category category) throws SQLException;
+    public List<Topic> getTopicsByCategory(Category category) throws SQLException;
 	
 	// return a topic given a topic ID
 	public Topic getTopicByID(int topicID) throws SQLException, TopicNotFoundException;
@@ -35,7 +37,7 @@ public interface TopicDAO {
 	public Topic getTopicByName(String topicName) throws SQLException, TopicNotFoundException;
 	
 	// create a new topic
-	public boolean createTopic(Topic topic, User admin) throws SQLException;	// pass in admin to restrict privilege
+	public void createTopic(Topic topic, User admin) throws SQLException, TopicNotCreatedException;	// pass in admin to restrict privilege
 		 
 	// delete a topic
 	public boolean deleteTopic(int topicID, User admin) throws SQLException;	// pass in admin to restrict privilege

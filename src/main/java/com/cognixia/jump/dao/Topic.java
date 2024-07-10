@@ -12,12 +12,32 @@ package com.cognixia.jump.dao;
 
 public class Topic {
 	
-	// define the category enum
+	// define the category enum and match database values with constant to avoid compromising on format
 	public enum Category{
-		TV_SHOW, 
-		BOOK, 
-		MUSIC
-	}
+		TV_SHOW("TV Show"), 
+		BOOK("Book"), 
+		MUSIC("Music");
+		
+        private String value;
+
+        Category(String value) {
+            this.value = value;
+        }
+
+        public String getValue() {
+            return value;
+        }
+
+        public static Category fromString(String text) {
+            for (Category c : Category.values()) {
+                if (c.value.equalsIgnoreCase(text)) {
+                    return c;
+                }
+            }
+            
+            throw new IllegalArgumentException("No enum constant " + text);
+        }
+    }
 
 	// attributes of the topic entity
 	private int topicID;
