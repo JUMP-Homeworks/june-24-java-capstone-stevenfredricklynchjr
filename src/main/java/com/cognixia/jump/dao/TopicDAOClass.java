@@ -57,10 +57,11 @@ public class TopicDAOClass implements TopicDAO{
 				// iterate through to get column info
 				int id = rs.getInt("topic_id");
 				String name = rs.getString("topic_name");
+				int length = rs.getInt("length");
 				Category category = Category.fromString(rs.getString("category"));
 				
 				// create Topic from data and add to list
-				Topic topic = new Topic(id, name, category);
+				Topic topic = new Topic(id, name, length, category);
 				topicList.add(topic);
 			}
 			
@@ -92,10 +93,11 @@ public class TopicDAOClass implements TopicDAO{
 				// iterate through to get column info
 				int id = rs.getInt("topic_id");
 				String name = rs.getString("topic_name");
+				int length = rs.getInt("length");
 				Category topicCategory = Category.fromString(rs.getString("category"));
 			
 				// create Topic from data and add to list
-				Topic topic = new Topic(id, name, topicCategory);
+				Topic topic = new Topic(id, name, length, topicCategory);
 				topicList.add(topic);
 			}
 		
@@ -125,9 +127,10 @@ public class TopicDAOClass implements TopicDAO{
 				// gather data for column info and save to Topic
 				int id = rs.getInt("topic_id");
 				String name = rs.getString("topic_name");
+				int length = rs.getInt("length");
 				Category category = Category.fromString(rs.getString("category"));
 			
-				Topic topic = new Topic(id, name, category);
+				Topic topic = new Topic(id, name, length, category);
 				return topic;
 				
 			}
@@ -157,9 +160,10 @@ public class TopicDAOClass implements TopicDAO{
 				// gather data for column info and save to Topic
 				int id = rs.getInt("topic_id");
 				String name = rs.getString("topic_name");
+				int length = rs.getInt("length");
 				Category category = Category.fromString(rs.getString("category"));
 			
-				Topic topic = new Topic(id, name, category);
+				Topic topic = new Topic(id, name, length, category);
 				return topic;
 				
 			}
@@ -184,10 +188,11 @@ public class TopicDAOClass implements TopicDAO{
 		
 		try {
 			// set up prepared statement to create a new topic
-			PreparedStatement pstmt = conn.prepareStatement("INSERT INTO topic (topic_id, topic_name, category) VALUES (?, ?, ?)");
+			PreparedStatement pstmt = conn.prepareStatement("INSERT INTO topic (topic_id, topic_name, length, category) VALUES (?, ?, ?, ?)");
 			pstmt.setInt(1, 0); // topic_id will auto-increment
             pstmt.setString(2, topic.getTopicName());
-            pstmt.setString(3, topic.getCategory().getValue());
+            pstmt.setInt(3, topic.getLength());
+            pstmt.setString(4, topic.getCategory().getValue());
             
 			pstmt.executeUpdate();
 			
@@ -234,10 +239,11 @@ public class TopicDAOClass implements TopicDAO{
 		
 		try {
 			// set up prepared statement to update a topic
-			PreparedStatement pstmt = conn.prepareStatement("UPDATE topic SET topic_name = ?, category = ? WHERE topic_id = ?");
+			PreparedStatement pstmt = conn.prepareStatement("UPDATE topic SET topic_name = ?, length = ?, category = ? WHERE topic_id = ?");
 			pstmt.setString(1,  topic.getTopicName());
 			pstmt.setString(2,  topic.getCategory().getValue());
-			pstmt.setInt(3, topic.getTopicID());
+			pstmt.setInt(3, topic.getLength());
+			pstmt.setInt(4, topic.getTopicID());
 			
 			int i = pstmt.executeUpdate();
 			
