@@ -45,21 +45,20 @@ public class Tracker {
 	private int progress;
 	private int rating;
 	private boolean favorite;
-	private User user;
-	private Topic topic;
+	private int userID;
+	private int topicID;
 	
 	// constructor accepting tracker attributes as arguments
-	public Tracker(int trackerID, UserStatus status, int progress, int rating, boolean favorite, User user, Topic topic) {
+	public Tracker(int trackerID, UserStatus status, int progress, int rating, boolean favorite, int userID, int topicID) {
 		super();
 		this.trackerID = trackerID;
 		this.status = status;
 		this.progress = progress;
 		this.rating = rating;
 		this.favorite = favorite;
-		this.user = user;
-		this.topic = topic;
-		
-		updateStatusBasedOnProgress(); // ensure the status is set correctly based on progress progress
+		this.userID = userID;
+		this.topicID = topicID;
+
 	}
 	
 	// getter and setter methods to manipulate attribute data
@@ -85,16 +84,20 @@ public class Tracker {
 	
 	public void setProgress(int progress) {
 		this.progress = progress;
-		updateStatusBasedOnProgress(); // update status automatically whenever progress is set
 	}
 	
 	public int getRating() {
 		return rating;
 	}
 	
-	public void setRating(int rating) {
-		this.rating = rating;
-	}
+	// Handle SMALLINT for the Rating 1-5
+    public void setRating(int rating) {
+        if (rating < 1 || rating > 5) {
+            throw new IllegalArgumentException("Rating must be between 1 and 5");
+        }
+        
+        this.rating = rating;
+    }
 	
 	public boolean isFavorite() {
 		return favorite;
@@ -104,44 +107,28 @@ public class Tracker {
 		this.favorite = favorite;
 	}
 	
-	public User getUser() {
-		return user;
+	public int getUserID() {
+		return userID;
 	}
 	
-	public void setUser(User user) {
-		this.user = user;
+	public void setUserID(int userID) {
+		this.userID = userID;
 	}
 	
-	public Topic getTopic() {
-		return topic;
+	public int getTopicID() {
+		return topicID;
 	}
 	
-	public void setTopic(Topic topic) {
-		this.topic = topic;
+	public void setTopicID(int topicID) {
+		this.topicID = topicID;
 	}
-	
-    // update the status based on the progress
-    private void updateStatusBasedOnProgress() {
-        if (progress == 0) {
-            this.status = UserStatus.NOT_STARTED;
-        } 
-        
-        else if (progress > 0 && progress < topic.getLength()) {
-            this.status = UserStatus.IN_PROGRESS;
-        } 
-        
-        else if (progress == topic.getLength() || progress > topic.getLength()) {
-            this.status = UserStatus.COMPLETED;
-            progress = topic.getLength();
-        }
-    }
 
 
 	// toString method to generate a formatted output of tracker data
 	@Override
 	public String toString() {
 		return "Tracker [trackerID=" + trackerID + ", status=" + status + ", progress=" + progress + ", rating="
-				+ rating + ", favorite=" + favorite + ", user=" + user + ", topic=" + topic + "]";
+				+ rating + ", favorite=" + favorite + ", userID=" + userID + ", topicID=" + topicID + "]";
 	}
 
 }

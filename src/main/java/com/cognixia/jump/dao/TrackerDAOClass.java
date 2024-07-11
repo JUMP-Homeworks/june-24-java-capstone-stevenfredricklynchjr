@@ -11,6 +11,7 @@ import java.util.Map;
 
 import com.cognixia.jump.connection.ConnectionManager;
 import com.cognixia.jump.dao.Topic.Category;
+import com.cognixia.jump.dao.Tracker.UserStatus;
 import com.cognixia.jump.exception.TrackerNotCreatedException;
 import com.cognixia.jump.exception.TrackerNotFoundException;
 
@@ -53,7 +54,6 @@ public class TrackerDAOClass implements TrackerDAO {
                     											 + "SUM(CASE WHEN user_status = 'in-progress' THEN 1 ELSE 0 END) AS in_progress_count, "
 											                     + "SUM(CASE WHEN user_status = 'completed' THEN 1 ELSE 0 END) AS completed_count "
 											                     + "FROM tracker WHERE topic_id = ?");
-        	
             pstmt.setInt(1, topic.getTopicID());
             ResultSet rs = pstmt.executeQuery();
 
@@ -77,15 +77,81 @@ public class TrackerDAOClass implements TrackerDAO {
         return report;
     }
 
+	// return a list of all trackers for a given user
 	@Override
 	public List<Tracker> getAllTrackersByUser(User user) throws SQLException {
-		// TODO Auto-generated method stub
+		try {
+			// set up prepared statement to get all trackers for a given user
+			PreparedStatement pstmt = conn.prepareStatement("SELECT * FROM tracker WHERE user_id = ?");
+			pstmt.setInt(1, user.getUserID());
+			
+			ResultSet rs = pstmt.executeQuery();
+			
+			// create the list 
+			List<Tracker> trackerList = new ArrayList<Tracker>();
+		
+			while(rs.next()) {
+				// iterate through to get column info
+				int id = rs.getInt("tracker_id");
+				UserStatus userStatus = UserStatus.fromString(rs.getString("user_status"));
+				int progress = rs.getInt("progress");
+				int rating = rs.getInt("rating");
+				boolean favorite = rs.getBoolean("favorite");
+				int user_id = rs.getInt("user_id");
+				int topic_id = rs.getInt("topic_id");
+			
+				// create Tracker from data and add to list
+				Tracker tracker = new Tracker(id, userStatus, progress, rating, favorite, user_id, topic_id);
+				trackerList.add(tracker);
+			}
+			
+			// return list when finished
+			return trackerList;
+		
+		} catch (SQLException e) {
+			System.out.println("Failed to retrieve list of trackers for this user");
+		}
+	
+		// return null if exception thrown
 		return null;
 	}
 
+	// return a list of all trackers for a given topic
 	@Override
 	public List<Tracker> getAllTrackersByTopic(Topic topic) throws SQLException {
-		// TODO Auto-generated method stub
+		try {
+			// set up prepared statement to get all trackers for a given user
+			PreparedStatement pstmt = conn.prepareStatement("SELECT * FROM tracker WHERE topic_id = ?");
+			pstmt.setInt(1, topic.getTopicID());
+			
+			ResultSet rs = pstmt.executeQuery();
+			
+			// create the list 
+			List<Tracker> trackerList = new ArrayList<Tracker>();
+		
+			while(rs.next()) {
+				// iterate through to get column info
+				int id = rs.getInt("tracker_id");
+				UserStatus userStatus = UserStatus.fromString(rs.getString("user_status"));
+				int progress = rs.getInt("progress");
+				int rating = rs.getInt("rating");
+				boolean favorite = rs.getBoolean("favorite");
+				int user_id = rs.getInt("user_id");
+				int topic_id = rs.getInt("topic_id");
+			
+				// create Tracker from data and add to list
+				Tracker tracker = new Tracker(id, userStatus, progress, rating, favorite, user_id, topic_id);
+				trackerList.add(tracker);
+			}
+			
+			// return list when finished
+			return trackerList;
+		
+		} catch (SQLException e) {
+			System.out.println("Failed to retrieve list of trackers for this topic");
+		}
+	
+		// return null if exception thrown
 		return null;
 	}
 
@@ -128,10 +194,40 @@ public class TrackerDAOClass implements TrackerDAO {
 		return null;
 	}
 
+	// return a tracker given a tracker ID
 	@Override
 	public Tracker getTrackerByID(int trackerID) throws SQLException, TrackerNotFoundException {
-		// TODO Auto-generated method stub
-		return null;
+		try {
+			// set up prepared statement to get a tracker given an ID
+			PreparedStatement pstmt = conn.prepareStatement("SELECT * FROM tracker WHERE tracker_id = ?");
+			pstmt.setInt(1, trackerID);
+			
+			ResultSet rs = pstmt.executeQuery();
+			
+			if(rs.next()) {
+			
+				// gather data for column info and save to Tracker
+				int id = rs.getInt("tracker_id");
+				UserStatus userStatus = UserStatus.fromString(rs.getString("user_status"));
+				int progress = rs.getInt("progress");
+				int rating = rs.getInt("rating");
+				boolean favorite = rs.getBoolean("favorite");
+				int user_id = rs.getInt("user_id");
+				int topic_id = rs.getInt("topic_id");
+			
+				Tracker tracker = new Tracker(id, userStatus, progress, rating, favorite, user_id, topic_id);
+				return tracker;
+				
+			}
+				
+			else {
+				throw new TrackerNotFoundException("Tracker with ID " + trackerID + " not found.");
+			}
+				
+		// since we already handle cases for tracker found and not found, we rethrow the exception
+		} catch(SQLException e) {
+			throw e;
+		}
 	}
 
 	// create a new tracker
@@ -146,8 +242,8 @@ public class TrackerDAOClass implements TrackerDAO {
             pstmt.setInt(2, tracker.getProgress());
             pstmt.setInt(3, tracker.getRating());
             pstmt.setBoolean(4, tracker.isFavorite());
-            pstmt.setInt(5, tracker.getUser().getUserID());
-            pstmt.setInt(6, tracker.getTopic().getTopicID());
+            pstmt.setInt(5, tracker.getUserID());
+            pstmt.setInt(6, tracker.getTopicID());
             
             pstmt.executeUpdate();
             
@@ -157,6 +253,7 @@ public class TrackerDAOClass implements TrackerDAO {
 		
 	}
 
+	// delete a tracker
 	@Override
 	public boolean deleteTracker(int trackerID) throws SQLException {
 		try {
@@ -209,7 +306,7 @@ public class TrackerDAOClass implements TrackerDAO {
 	// get the average rating for a topic across all users
 	@Override
 	public double getAverageRatingForTopic(Topic topic) throws SQLException {
-		double averageRating = 0.0;
+		double averageRating = 0.0; // set up double to hold average value
 		try {
 			// set up prepared statement to find the average rating across all users for given topic
 			PreparedStatement pstmt = conn.prepareStatement("SELECT AVG(rating) FROM tracker WHERE topic_id = ? AND rating IS NOT NULL");
@@ -235,7 +332,7 @@ public class TrackerDAOClass implements TrackerDAO {
 	    	// set up prepared statement to get the length of the topic 
 	    	PreparedStatement pstmt = conn.prepareStatement("SELECT length FROM topic WHERE topic_id = ?");
 	        
-	    	pstmt.setInt(1, tracker.getTopic().getTopicID());
+	    	pstmt.setInt(1, tracker.getTopicID());
 	        ResultSet rs = pstmt.executeQuery();
 	        
 	        
