@@ -1,6 +1,7 @@
 package com.cognixia.jump.menu;
 
 import java.sql.SQLException;
+import java.util.InputMismatchException;
 import java.util.List;
 import java.util.Scanner;
 
@@ -19,6 +20,7 @@ import com.cognixia.jump.dao.Tracker;
 import com.cognixia.jump.dao.Tracker.UserStatus;
 import com.cognixia.jump.dao.TrackerDAO;
 import com.cognixia.jump.dao.TrackerDAOClass;
+import com.cognixia.jump.menu.MenuMethods;
 
 /*
  * 
@@ -30,18 +32,25 @@ import com.cognixia.jump.dao.TrackerDAOClass;
 public class Menu {
 
 	// scanner to use throughout program.
-	private static Scanner sc;
+	private Scanner sc;
 	
 	// concrete classes to handle CRUD and other operations
-    private static UserDAO userDAO = new UserDAOClass();
-    private static TrackerDAO trackerDAO = new TrackerDAOClass();
-    private static TopicDAO topicDAO = new TopicDAOClass();
-    private static User currentUser;
+    private UserDAO userDAO;
+    private TrackerDAO trackerDAO = new TrackerDAOClass();
+    private TopicDAO topicDAO = new TopicDAOClass();
+    public static User currentUser;
+    private MenuMethods menuMethods;
 
-	public static void mainMenu() {
-		
-		// once we enter menu, can initialize scanner
-		sc = new Scanner(System.in);
+    public Menu(UserDAO userDAO, TopicDAO topicDAO, TrackerDAO trackerDAO) {
+        this.userDAO = userDAO;
+        this.topicDAO = topicDAO;
+        this.trackerDAO = trackerDAO;
+        this.sc = new Scanner(System.in);
+        this.menuMethods = new MenuMethods(sc, userDAO, trackerDAO, topicDAO, this);
+    }
+    
+    
+	public void mainMenu() {
 
 		System.out.println("Progress Tracker");
 		System.out.println("------------------");
@@ -56,16 +65,23 @@ public class Menu {
 			System.out.println("2. Register");
 			System.out.println("3. Exit");
 			
-			int input = sc.nextInt();
-			sc.nextLine(); // prevent infinite scanner loop
+	        int input = -1;
+	        try {
+	            input = sc.nextInt();
+	            sc.nextLine(); // prevent infinite scanner loop
+	        } catch (InputMismatchException e) {
+	            System.out.println("\nInvalid input. Please enter a number (1-3).");
+	            sc.next(); // clear invalid input
+	            continue; // prompt user again
+	        }
 			
 			switch (input) {
 			
 			case 1:
-				login();
+				menuMethods.login();
 				break;
 			case 2:
-				register();
+				menuMethods.register();
 				break;
 			case 3:
 				exit = true;
@@ -81,72 +97,12 @@ public class Menu {
 		
 		// close scanner upon exit
 		sc.close();
-	}
-	
-    public static void login() {
-        System.out.print("username: ");
-        String username = sc.nextLine();
-        System.out.print("password: ");
-        String password = sc.nextLine();
-        
-        try {
-        	
-			if(userDAO.authenticateUser(username, password)) {
-				currentUser = userDAO.getUserByUsername(username);
-				if(userDAO.isAdmin(currentUser)) {
-					adminMenu();
-				}
-				
-				userMenu();
-			}
-			
-		} catch (SQLException | UserNotFoundException | InvalidPasswordException e) {
-			System.out.println(e.getMessage());
-		}
-    }
-
-	public static void register() {
-        System.out.print("username: ");
-        String username = sc.nextLine();
-        System.out.print("password: ");
-        String password = sc.nextLine();
-        System.out.print("confirm password: ");
-        String confirmPassword = sc.nextLine();
-        
-        while(!confirmPassword.equals(password)) {
-        	System.out.println("passwords do not match");
-        	System.out.println("1. Try Again");
-        	System.out.println("2. Cancel");
-        	
-        	int input = sc.nextInt();
-			sc.nextLine(); // prevent infinite scanner loop
-			
-			switch (input) {
-			
-			case 1:
-				System.out.print("confirm password: ");
-				confirmPassword = sc.nextLine();
-				break;
-			case 2:
-				mainMenu();
-				break;				           
-			}
-        }
-
-        try {
-        	
-            if (userDAO.createUser(username, password)) {
-                 userMenu();
-            } 
-           
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-    }
+		System.exit(0);
+	}	    
     
-    public static void userMenu() {
+    public void userMenu() {
 
-		System.out.println("Progress Tracker: " + currentUser);
+		System.out.println("\nProgress Tracker: " + currentUser.getUsername());
 		System.out.println("------------------");
 		
 		// used to exit loop
@@ -157,13 +113,20 @@ public class Menu {
 			System.out.println("\nPlease Select from the Menu Below");
 			System.out.println("1. My Trackers");
 			System.out.println("2. New Tracker");
-			System.out.println("3. View Tracker Reports");
-			System.out.println("3. Account Settings");
-			System.out.println("4. Logout");
-			System.out.println("5. Exit");
+			System.out.println("3. Tracker Stats");
+			System.out.println("4. Account Settings");
+			System.out.println("5. Logout");
+			System.out.println("6. Exit");
 			
-			int input = sc.nextInt();
-			sc.nextLine(); // prevent infinite scanner loop
+	        int input = -1;
+	        try {
+	            input = sc.nextInt();
+	            sc.nextLine(); // prevent infinite scanner loop
+	        } catch (InputMismatchException e) {
+	            System.out.println("\nInvalid input. Please enter a number (1-6).");
+	            sc.next(); // clear invalid input
+	            continue; // prompt user again
+	        }
 			
 			switch (input) {
 			
@@ -174,16 +137,19 @@ public class Menu {
 				newTrackerMenu();
 				break;
 			case 3:
-				accountSettings();
+				trackerStatsMenu();
 				break;
 			case 4:
-				mainMenu();
+				accountSettingsMenu();
 				break;
 			case 5:
+				mainMenu();
+				break;
+			case 6:
 				exit = true;
 				break;
 			default:
-				System.out.println("\nPlease enter an option listed (number 1 - 3)");
+				System.out.println("\nPlease enter an option listed (number 1 - 6)");
 				break;
 			}
 			
@@ -193,10 +159,21 @@ public class Menu {
 		
 		// close scanner upon exit
 		sc.close();
+		System.exit(0);
 	}
     
-    public static void adminMenu() {
-    	System.out.println("Progress Tracker: " + currentUser);
+    public void trackerStatsMenu() {
+		// TODO Auto-generated method stub
+		
+	}
+
+	public void accountSettingsMenu() {
+		// TODO Auto-generated method stub
+		
+	}
+
+	public void adminMenu() {
+		System.out.println("\nProgress Tracker: " + currentUser.getUsername());
 		System.out.println("------------------");
 		
 		// used to exit loop
@@ -207,13 +184,20 @@ public class Menu {
 			System.out.println("\nPlease Select from the Menu Below");
 			System.out.println("1. My Trackers");
 			System.out.println("2. New Tracker");
-			System.out.println("3. View Tracker Reports");
-			System.out.println("3. Account Settings");
-			System.out.println("4. Logout");
-			System.out.println("5. Exit");
+			System.out.println("3. Tracker Stats");
+			System.out.println("4. Account Settings");
+			System.out.println("5. Logout");
+			System.out.println("6. Exit");
 			
-			int input = sc.nextInt();
-			sc.nextLine(); // prevent infinite scanner loop
+	        int input = -1;
+	        try {
+	            input = sc.nextInt();
+	            sc.nextLine(); // prevent infinite scanner loop
+	        } catch (InputMismatchException e) {
+	            System.out.println("\nInvalid input. Please enter a number (1-6).");
+	            sc.next(); // clear invalid input
+	            continue; // prompt user again
+	        }
 			
 			switch (input) {
 			
@@ -224,16 +208,19 @@ public class Menu {
 				newTrackerMenu();
 				break;
 			case 3:
-				accountSettings();
+				trackerStatsMenu();
 				break;
 			case 4:
-				mainMenu();
+				accountSettingsMenu();
 				break;
 			case 5:
+				mainMenu();
+				break;
+			case 6:
 				exit = true;
 				break;
 			default:
-				System.out.println("\nPlease enter an option listed (number 1 - 3)");
+				System.out.println("\nPlease enter an option listed (number 1 - 6)");
 				break;
 			}
 			
@@ -243,190 +230,189 @@ public class Menu {
 		
 		// close scanner upon exit
 		sc.close();
-		
+		System.exit(0);
 	}
     
-    public static void myTrackers() {
+    public void myTrackers() {
     	System.out.println("\nPlease Select from the Menu Below");
 		System.out.println("1. View/Update Trackers");
-		System.out.println("2. View/Update Favorites");
-		System.out.println("3. Logout");
+		System.out.println("2. View Favorites");
 		System.out.println("3. Go Back");
-		System.out.println("4. Return to Menu");
+		
+        int input = -1;
+        try {
+            input = sc.nextInt();
+            sc.nextLine(); // prevent infinite scanner loop
+        } catch (InputMismatchException e) {
+            System.out.println("\nInvalid input. Please enter a number (1-3).");
+            sc.next(); // clear invalid input
+            //continue; // prompt user again
+        }
+		
+		switch (input) {
+		
+		case 1:
+			viewTrackersCategoryMenu();
+			break;
+		case 2:
+			menuMethods.viewFavorites();
+			break;
+		case 3:
+			userMenu();
+			break;
+
+		default:
+			System.out.println("\nPlease enter an option listed (number 1 - 3)");
+			break;
+		}
     	
     }
     
-    public static void newTrackerMenu() {
-    	System.out.println("which would you like to make a new tracker for?");
+	public void viewTrackersCategoryMenu() {
+		
+		try {
+			if ((trackerDAO.getAllTrackersByUser(Menu.currentUser) != null) && (!trackerDAO.getAllTrackersByUser(Menu.currentUser).isEmpty())) {
+				System.out.println("Select a Category:");
+				System.out.println("1. TV Shows");
+				System.out.println("2. Books");
+				System.out.println("3. Music Albums");
+				System.out.println("4. Cancel");
+				
+			    int input = -1;
+			    try {
+			        input = sc.nextInt();
+			        sc.nextLine(); // prevent infinite scanner loop
+			    } catch (InputMismatchException e) {
+			        System.out.println("\nInvalid input. Please enter a number (1-4).");
+			        sc.next(); // clear invalid input
+			        //continue; // prompt user again
+			    }
+				
+				switch (input) {
+				
+				case 1:
+					viewTrackersStatusMenu(Category.SERIES);
+					break;
+				case 2:
+					viewTrackersStatusMenu(Category.BOOK);
+					break;		
+				case 3:
+					viewTrackersStatusMenu(Category.ALBUM);
+					break;
+				case 4:
+					userMenu();
+					break;
+				default:
+					System.out.println("\nPlease enter an option listed (number 1 - 4)");
+					break;
+				}
+			}
+			
+			else {
+                System.out.println("No trackers yet. Select New Tracker to track your selection!");
+                userMenu();
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+
+    	
+		
+	}
+	
+	public void viewTrackersStatusMenu(Category category) {
+		// set the specific words to appear appropriately based on category and status
+		String action = null;
+		String actions = null;
+		
+        if(category == Category.SERIES) {
+        	action = "watch";
+        	actions = "watching";
+        }
+        
+        else if(category == Category.BOOK) {
+        	action = "read";
+        	actions = "reading";
+        }
+        
+        else if(category == Category.ALBUM) {
+        	action = "listen";
+        	actions = "listening";
+        }
+        
+		System.out.println("Select a Status:");
+        System.out.println("1. Plan to " + action);
+        System.out.println("2. Currently " + actions);
+        System.out.println("3. Finished " + actions);
+        System.out.println("4. Cancel");
+		
+        int input = -1;
+        try {
+            input = sc.nextInt();
+            sc.nextLine(); // prevent infinite scanner loop
+        } catch (InputMismatchException e) {
+            System.out.println("\nInvalid input. Please enter a number (1-4).");
+            sc.next(); // clear invalid input
+            //continue; // prompt user again
+        }
+		
+		switch (input) {
+		
+		case 1:
+			menuMethods.viewTrackers(category, UserStatus.NOT_STARTED);
+			break;
+		case 2:
+			menuMethods.viewTrackers(category, UserStatus.IN_PROGRESS);
+			break;		
+		case 3:
+			menuMethods.viewTrackers(category, UserStatus.COMPLETED);
+			break;
+		case 4:
+			userMenu();
+			break;
+		default:
+			System.out.println("\nPlease enter an option listed (number 1 - 4)");
+			break;
+		}
+	}
+
+	public void newTrackerMenu() {
+    	System.out.println("Select a Category:");
 		System.out.println("1. TV Shows");
 		System.out.println("2. Books");
 		System.out.println("3. Music Albums");
 		System.out.println("4. Cancel");
 		
-		int input = sc.nextInt();
-		sc.nextLine(); // prevent infinite scanner loop
+        int input = -1;
+        try {
+            input = sc.nextInt();
+            sc.nextLine(); // prevent infinite scanner loop
+        } catch (InputMismatchException e) {
+            System.out.println("\nInvalid input. Please enter a number (1-3).");
+            sc.next(); // clear invalid input
+            //continue; // prompt user again
+        }
 		
 		switch (input) {
 		
 		case 1:
-			newTracker(Category.SERIES, "Series");
+			menuMethods.newTracker(Category.SERIES, "Series");
 			break;
 		case 2:
-			newTracker(Category.BOOK, "Book");
+			menuMethods.newTracker(Category.BOOK, "Book");
 			break;		
 		case 3:
-			newTracker(Category.ALBUM, "Album");
+			menuMethods.newTracker(Category.ALBUM, "Album");
 			break;
 		case 4:
 			userMenu();
 			break;
+		default:
+			System.out.println("\nPlease enter an option listed (number 1 - 4)");
+			break;
 		}
     }
-    
-    public static void newTracker(Category category, String categoryName) {
-        try {
-        	// list of trackers under the selected category
-            List<Topic> topics = topicDAO.getTopicsByCategory(category);
-            String action = null;
-            String actions = null;
-            String progressUnit = null;
-            
-            // set the specific words to appear appropriately based on category and status
-            if(categoryName.equals("Series")) {
-            	action = "watch";
-            	actions = "watching";
-            	progressUnit = "episode";
-            }
-            
-            else if (categoryName.equals("Book")) {
-            	action = "read";
-            	actions = "reading";
-            	progressUnit = "page";
-            }
-            
-            else if (categoryName.equals("Album")) {
-            	action = "listen";
-            	actions = "listening";
-            	progressUnit = "song";
-            }
 
-            System.out.println("Select a " + categoryName + " to track:");
-            for (int i = 0; i < topics.size(); i++) {
-                System.out.println((i + 1) + ". " + topics.get(i).getTopicName());
-            }
-            
-            System.out.println((topics.size() + 1) + ". Cancel");
-
-            int inputTopic = sc.nextInt();
-            sc.nextLine(); // prevent infinite scanner loop
-
-            if (inputTopic > 0 && inputTopic <= topics.size()) {
-                Topic selectedTopic = topics.get(inputTopic - 1);
-
-                System.out.println("Select the status category:");
-                System.out.println("1. Plan to " + action);
-                System.out.println("2. Currently " + actions);
-                System.out.println("3. Finished " + actions);
-
-                int inputStatus = sc.nextInt();
-                sc.nextLine(); // prevent infinite scanner loop
-
-                UserStatus selectedStatus = null;
-                int progress = 0;
-                int rating = 0;
-                boolean favorite = false;
-  
-                switch (inputStatus) {
-                    case 1:
-                        selectedStatus = UserStatus.NOT_STARTED;
-                        break;
-                        
-                    case 2:
-                    	selectedStatus = UserStatus.IN_PROGRESS;
-                        System.out.println("Set your " + progressUnit + " progress (0 to " + selectedTopic.getLength() + "): ");
-                        progress = sc.nextInt();
-                        sc.nextLine();
-                        
-                        // ask for optional rating
-                    	String response = null;
-                    	while(!(response.equals("y") || response.equals("n"))) {
-                    		System.out.println("Give rating? (y/n)");
-                    		response = sc.next();
-                    	}
-                    	
-                    	if(response.equalsIgnoreCase("y")) {
-                    		while(!(rating > 0 && rating <=5)) {
-                    			System.out.println("Rate the " + categoryName + " (1 to 5): ");
-                    			rating = sc.nextInt();
-                    		}
-                    	}
-                    	
-                    	// ask for adding to favorites
-                    	response = null; // reset response
-                    	
-                    	// will repeat until user gives a valid response
-                    	while(!(response.equals("y") || response.equals("n"))) {
-                    		System.out.println("Add to Favorites? (y/n)");
-                    		response = sc.next();
-                    	}
-                    	
-                    	if(response.equalsIgnoreCase("y")) {
-                    		favorite = true;
-                    	}
-                    
-                        sc.nextLine();
-                        break;
-                        
-                    case 3:
-                    	selectedStatus = UserStatus.COMPLETED;
-                    	while(!(rating > 0 && rating <=5)) {
-                			System.out.println("Rate the " + categoryName + " (1 to 5): ");
-                			rating = sc.nextInt();
-                		}
-                    	
-                    	response = null; // reset response
-                    	
-                    	// will repeat until user gives a valid response
-                    	while(!(response.equals("y") || response.equals("n"))) {
-                    		System.out.println("Add to Favorites? (y/n)");
-                    		response = sc.next();
-                    	}
-                    	
-                    	if(response.equalsIgnoreCase("y")) {
-                    		favorite = true;
-                    	}
-                    	sc.nextLine();
-                        break;
-                    default:
-                        System.out.println("Invalid selection. Returning to menu.");
-                        userMenu();
-                        return;
-                }
-                         
-          
-                Tracker newTracker = new Tracker(0, selectedStatus, progress, rating, favorite, currentUser.getUserID(), selectedTopic.getTopicID());
-                newTracker.setUserID(currentUser.getUserID());
-                newTracker.setTopicID(selectedTopic.getTopicID());
-                newTracker.setStatus(selectedStatus);
-                newTracker.setProgress(progress);
-                newTracker.setRating(rating);
-                newTracker.setFavorite(favorite);
-
-                // Call the createTracker method, which will internally call updateProgressAndStatus
-                trackerDAO.createTracker(newTracker);
-
-                System.out.println("New tracker created for " + selectedTopic.getTopicName());
-            } 
-            
-            else {
-            	System.out.println("invalid selection - please try again");
-                newTracker(category, categoryName);
-            }
-            
-        } catch (SQLException | TrackerNotCreatedException e) {
-            e.printStackTrace();
-        }
-    }
 
 
 }

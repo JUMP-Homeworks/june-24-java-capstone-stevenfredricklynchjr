@@ -27,7 +27,7 @@ CREATE TABLE tracker (
     user_status ENUM('not started', 'in-progress', 'completed') NOT NULL,
     progress INT,
     rating SMALLINT 
-		   CHECK (rating BETWEEN 1 AND 5),	-- keep rating between 1 and 5
+		   CHECK (rating BETWEEN 0 AND 5),	-- keep rating between 1 and 5, if 0 then have java functionality to hide
     favorite BOOLEAN DEFAULT FALSE, -- extra feature for users to mark favorites
     user_id INT,
     CONSTRAINT fk_tracker_users

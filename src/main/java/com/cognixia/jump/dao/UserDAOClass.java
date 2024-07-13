@@ -180,21 +180,38 @@ public class UserDAOClass implements UserDAO{
 	public boolean authenticateUser(String username, String plainTextPassword) throws SQLException, UserNotFoundException, InvalidPasswordException {
 		try {
 			// set up prepared statement to authenticate a user given a username and password
-			PreparedStatement pstmt = conn.prepareStatement("SELECT password FROM users WHERE username = ?");
+			PreparedStatement pstmt = conn.prepareStatement("SELECT password_hash FROM users WHERE username = ?");
 			pstmt.setString(1, username);
 			
 			ResultSet rs = pstmt.executeQuery();
 			
 			// check if password is correct for username given
 			if(rs.next()) {
-				String hashedPassword = rs.getString("password_hash");
-				if(PasswordUtil.checkPassword(plainTextPassword, hashedPassword)) {
-					return true;
+				String storedPassword = rs.getString("password_hash");
+				
+				// check if password is hashed, allow for login with test accounts
+				if(storedPassword.length() == 60 && storedPassword.startsWith("$2a$")) {
+					// use BCrypt
+					if(PasswordUtil.checkPassword(plainTextPassword, storedPassword)) {
+						return true;
+					}
+					
+					else {
+						// throw InvalidPasswordException if password does not match
+						throw new InvalidPasswordException("Incorrect Password");
+					}
 				}
 				
-				// throw InvalidPasswordException if password does not match
-				else {
-					throw new InvalidPasswordException("Incorrect Password");
+				else{
+					// use direct comparison
+					if(plainTextPassword.equals(storedPassword)) {
+						return true;
+					}
+					
+					else {
+						// throw InvalidPasswordException if password does not match
+						throw new InvalidPasswordException("Incorrect Password");
+					}
 				}
 			}
 			

@@ -164,6 +164,7 @@ public class TrackerDAOClass implements TrackerDAO {
 					   									  + "JOIN topic t "
 					   									  + "ON tr.topic_id = t.topic_id "
 					   									  + "WHERE tr.user_id = ? AND tr.favorite = TRUE");
+			pstmt.setInt(1, user.getUserID());
 			ResultSet rs = pstmt.executeQuery();
 			
 			// create the list of favorites
