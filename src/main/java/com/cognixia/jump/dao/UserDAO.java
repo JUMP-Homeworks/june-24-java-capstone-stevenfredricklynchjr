@@ -41,13 +41,16 @@ public interface UserDAO {
 	// delete a user
 	public boolean deleteUser(int userID) throws SQLException;
 	
-	// edit user info
-	public boolean updateUser(User user) throws SQLException;
+	// edit user info where password is updated
+	public boolean updateUser(User user, String plainTextPassword) throws SQLException;
 	
 	// create an admin user that is able to add, remove, and edit topic information 
 	public boolean createAdmin(String username, String plainTextPassword) throws SQLException;
 	
 	// return true if a user is an admin
 	public boolean isAdmin(User user) throws SQLException;
+
+	// update user without password where password is not updated
+	boolean updateUser(User user) throws SQLException;
 	
 }

@@ -15,9 +15,18 @@ import com.cognixia.jump.dao.UserDAO;
 import com.cognixia.jump.dao.Topic.Category;
 import com.cognixia.jump.dao.Tracker.UserStatus;
 import com.cognixia.jump.exception.InvalidPasswordException;
+import com.cognixia.jump.exception.TopicNotCreatedException;
 import com.cognixia.jump.exception.TopicNotFoundException;
 import com.cognixia.jump.exception.TrackerNotCreatedException;
 import com.cognixia.jump.exception.UserNotFoundException;
+
+/*
+ * 
+ * The menu methods class for methods passed by the Menu class
+ * 
+ * Used for separating functionality for neatness
+ * 
+ */
 
 public class MenuMethods {
     private Scanner sc;
@@ -26,6 +35,7 @@ public class MenuMethods {
     private TopicDAO topicDAO;
     private Menu menu;  // Reference to the Menu class to navigate between menus
 
+    // constructor
     public MenuMethods(Scanner sc, UserDAO userDAO, TrackerDAO trackerDAO, TopicDAO topicDAO, Menu menu) {
         this.sc = sc;
         this.userDAO = userDAO;
@@ -34,6 +44,7 @@ public class MenuMethods {
         this.menu = menu;
     }
 
+    // login method to log in with existing users
     public void login() {
         System.out.print("username: ");
         String username = sc.nextLine();
@@ -58,6 +69,7 @@ public class MenuMethods {
 		}
     }
 
+    // register method to register a new user
 	public void register() {
         System.out.print("username: ");
         String username = sc.nextLine();
@@ -98,6 +110,118 @@ public class MenuMethods {
         }
     }
 	
+	// method to  users to see tracker reports for a topic as a whole (How many users have completed a show, still watching a show, etc.)
+	public void viewTrackerReports(Category category) {
+		String categoryName = null;
+		String action = null;
+		String actions = null;
+		double averageRating = 0.0;
+        
+		if(category == Category.SERIES) {
+        	categoryName = "series";
+        	action = "watch";
+        	actions = "watching";
+        }
+    	        	
+    	else if (category == Category.BOOK) {  		
+        	categoryName = "book";
+        	action = "read";
+        	actions = "reading";     		
+    	}
+    	
+    	else if (category == Category.ALBUM) {
+        	categoryName = "music album";
+        	action = "listen";
+        	actions = "listening";
+    	}
+    	
+    	List<Topic> topics;
+		try {
+			topics = topicDAO.getTopicsByCategory(category);
+			System.out.println("Select a " + categoryName + " to see user Tracker Reports:");
+		    
+	        for (int i = 0; i < topics.size(); i++) {
+	            System.out.println((i + 1) + ". " + topics.get(i).getTopicName());
+	        }
+	        
+	        System.out.println((topics.size() + 1) + ". Go Back");
+
+	        int inputTopic = -1;
+	        try {
+	            inputTopic = sc.nextInt();
+	            sc.nextLine(); // prevent infinite scanner loop
+	        } catch (InputMismatchException e) {
+	            System.out.println("\nInvalid input. Please enter a number");
+	            sc.next(); // clear invalid input
+	        }
+
+	        if (inputTopic > 0 && inputTopic <= topics.size()) {
+	            Topic selectedTopic = topics.get(inputTopic - 1);
+	            List<Tracker> trackers = trackerDAO.getAllTrackersByTopic(selectedTopic);
+	            
+	            int planning = 0;
+	            int current = 0;
+	            int complete = 0;
+	            for (Tracker tracker : trackers) {
+	            	
+	            	UserStatus status = tracker.getStatus();
+	            
+		            if (status == UserStatus.NOT_STARTED) {
+		            	planning = planning + 1;  		           
+		            }
+		            
+		            if (status == UserStatus.IN_PROGRESS) {
+		            	current = current + 1;  		           
+		            }
+		            
+		            if (status == UserStatus.COMPLETED) {
+		            	complete = complete + 1;  		           
+		            }
+	            }   
+		    
+	            averageRating = trackerDAO.getAverageRatingForTopic(selectedTopic);
+	            System.out.println("\nTracker Report for " + selectedTopic.getTopicName());
+	            System.out.println("Want to " + action + ": " + planning + " users");
+	            System.out.println("Currently " + actions + ": " + current + " users");
+	            System.out.println("Finished " + actions + ": " + complete + " users");
+	            if(averageRating > 0) {
+	            	System.out.println("Average User Rating: " + averageRating + " / 5");
+	            }
+	            
+	            else {
+	            	System.out.println("Average User Rating: N/A (no ratings yet!");
+	            }
+	            
+	            int backInput = -1;
+	            while(backInput != 1) {
+	            	System.out.println("\n Press 1 to Go Back");
+	            	try {
+	    	            backInput = sc.nextInt();
+	    	            sc.nextLine(); // prevent infinite scanner loop
+	    	        } catch (InputMismatchException e) {
+	    	            System.out.println("\nInvalid input. Press 1 to Go Back.");
+	    	            sc.next(); // clear invalid input
+	    	        }          
+	            }
+	            
+	            viewTrackerReports(category);
+	        }
+	        
+	        else if(inputTopic == topics.size() + 1) {
+            	menu.categoryMenu(2);
+            }
+            
+            else {
+            	System.out.println("invalid selection - please try again");
+                viewTrackerReports(category);
+            }
+            
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }		               
+	}
+	
+	// method to allow users to view and manage their trackers
 	public void viewTrackers(Category category, UserStatus status) {
 		String progressUnit = null;
 		String categoryName = null;
@@ -167,6 +291,7 @@ public class MenuMethods {
                     	System.out.println("\tYour Rating: " + viewTrackers.get(i).getRating());
                     }
                     
+                    // 0 is the default for when a user has not rated the topic
                     if(trackerDAO.getAverageRatingForTopic(topicDAO.getTopicByID(viewTrackers.get(i).getTopicID())) == 0) {
                     	System.out.println("\tAverage Rating: N/A\n");
                     }
@@ -210,10 +335,130 @@ public class MenuMethods {
 		
 	}
 	
+	// method from account settings to allow users to change their username
+	public void editUsername() {
+		System.out.println("\nEnter password to make changes: ");
+		String plainTextPassword = sc.next();
+		try {
+			if(userDAO.authenticateUser(Menu.currentUser.getUsername(), plainTextPassword)) {	
+				System.out.println("Current Username: " + Menu.currentUser.getUsername());
+				System.out.println("Enter new Username: ");
+				String newUserName = sc.next();
+				Menu.currentUser.setUsername(newUserName);
+				userDAO.updateUser(Menu.currentUser);
+			}
+			
+			else {
+				int input = -1; 
+	            // will repeat until user gives a valid response
+	            while(!(input == 1 || input == 2)) {
+	            	System.out.println("Incorrect Password");
+	            	System.out.println("1. Try Again");
+	        		System.out.println("2. Cancel");
+	            	try {
+	    	            input = sc.nextInt();
+	    	            
+	    	        } catch (InputMismatchException e) {
+	    	            System.out.println("\nInvalid input. Please select 1 or 2");
+	    	            sc.next(); // clear invalid input
+	    	            continue; // prompt user again
+	    	        }                      
+	            }
+	            
+	            if(input == 1) {
+	            	editUsername();	            		          
+	            }
+	            
+	            else {
+	            	if(Menu.currentUser.getIsAdmin()) {
+	            		menu.adminMenu();
+	            	}
+	            	
+	            	menu.userMenu();
+	            }
+			}
+			
+		} catch (SQLException | UserNotFoundException | InvalidPasswordException e) {
+			e.printStackTrace();
+		}
+		
+		
+	}
+	
+	// method from account settings to allow users to change their password
+	public void editPassword() {
+		System.out.println("\nEnter Current password to make changes: ");
+		String plainTextPassword = sc.next();
+		try {
+			if(userDAO.authenticateUser(Menu.currentUser.getUsername(), plainTextPassword)) {	
+				System.out.println("Enter new Password: ");
+				String newPassword = sc.next();
+		
+				userDAO.updateUser(Menu.currentUser, newPassword);
+			}
+			
+			else {
+				int input = -1; 
+	            // will repeat until user gives a valid response
+	            while(!(input == 1 || input == 2)) {
+	            	System.out.println("Incorrect Password");
+	            	System.out.println("1. Try Again");
+	        		System.out.println("2. Cancel");
+	            	try {
+	    	            input = sc.nextInt();
+	    	            
+	    	        } catch (InputMismatchException e) {
+	    	            System.out.println("\nInvalid input. Please select 1 or 2");
+	    	            sc.next(); // clear invalid input
+	    	            continue; // prompt user again
+	    	        }                      
+	            }
+	            
+	            if(input == 1) {
+	            	editUsername();	            		          
+	            }
+	            
+	            else {
+	            	if(Menu.currentUser.getIsAdmin()) {
+	            		menu.adminMenu();
+	            	}
+	            	
+	            	menu.userMenu();
+	            }
+			}
+			
+		} catch (SQLException | UserNotFoundException | InvalidPasswordException e) {
+			e.printStackTrace();
+		}
+		
+		
+	}
+	
+	// method to allow users to make changes to their trackers, especially for updating progress
 	public void updateTracker(Tracker tracker) {
 	    String progressUnit = null;
-	    String action = null;
-	    String actions = null;
+	 // set the specific words to appear appropriately based on category
+        try {
+			if(topicDAO.getTopicByID(tracker.getTopicID()).getCategory() == Category.SERIES) {
+				progressUnit = "episode(s)";
+			} else
+				try {
+					if(topicDAO.getTopicByID(tracker.getTopicID()).getCategory() == Category.BOOK) {
+						progressUnit = "page(s)";
+					}
+					
+					else if(topicDAO.getTopicByID(tracker.getTopicID()).getCategory() == Category.ALBUM) {
+						progressUnit = "song(s)";
+					}
+				} catch (SQLException | TopicNotFoundException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+		} catch (SQLException | TopicNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+        
 	    int rating = tracker.getRating();
 	    
 		Topic topic = null;
@@ -224,25 +469,76 @@ public class MenuMethods {
 			return; // exit method if broken
 		}
 		
-		// set the specific words to appear appropriately based on category
-        if(topic.getCategory() == Category.SERIES) {
-        	progressUnit = "episode(s)";
-        	action = "watch";
-        	actions = "watching";
+		// ask for action
+        int input = -1; 
+        // will repeat until user gives a valid response
+        while(!(input == 1 || input == 2 || input == 3)) {
+        	System.out.println("What would you like to do?");
+        	System.out.println("1. Update Tracker");
+    		System.out.println("2. Delete Tracker");
+    		System.out.println("3. Cancel");
+        	try {
+	            input = sc.nextInt();
+	            
+	        } catch (InputMismatchException e) {
+	            System.out.println("\nInvalid input. Please select 1 (Update) or 2 (Delete)");
+	            sc.next(); // clear invalid input
+	            continue; // prompt user again
+	        }                      
         }
         
-        else if (topic.getCategory() == Category.BOOK) {
-        	progressUnit = "page(s)";
-        	action = "read";
-        	actions = "reading";
+        if(input == 2) {
+        	input = -1; 
+            // will repeat until user gives a valid response
+            while(!(input == 1 || input == 2)) {
+            	System.out.println("Are you sure you want to delete this tracker?");
+            	System.out.println("1. Yes");
+        		System.out.println("2. No");
+            	try {
+    	            input = sc.nextInt();
+    	            
+    	        } catch (InputMismatchException e) {
+    	            System.out.println("\nInvalid input. Please select 1 (Yes) or 2 (No)");
+    	            sc.next(); // clear invalid input
+    	            continue; // prompt user again
+    	        }                      
+            }
+            
+            if(input == 1) {
+            	try {
+    				trackerDAO.deleteTracker(tracker.getTrackerID());
+    			} catch (SQLException e) {
+    				e.printStackTrace();
+    			}
+            	
+            	System.out.println("Tracker Successfully Deleted");
+            	try {
+					viewTrackers(topicDAO.getTopicByID(tracker.getTopicID()).getCategory(), tracker.getStatus());
+				} catch (SQLException | TopicNotFoundException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+            }
+            
+            else if (input == 2){
+            	try {
+					viewTrackers(topicDAO.getTopicByID(tracker.getTopicID()).getCategory(), tracker.getStatus());
+				} catch (SQLException | TopicNotFoundException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+            }
         }
         
-        else if (topic.getCategory() == Category.ALBUM) {
-        	progressUnit = "song(s)";
-        	action = "listen to";
-        	actions = "listening to";
+        else if(input == 3) {
+        	try {
+				viewTrackers(topicDAO.getTopicByID(tracker.getTopicID()).getCategory(), tracker.getStatus());
+			} catch (SQLException | TopicNotFoundException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}	
         }
-        
+         
         System.out.println("Update tracker for " + topic.getTopicName());
         System.out.println("\nCurrent progress: " + tracker.getProgress() + " " + progressUnit + " out of " + topic.getLength());       
         
@@ -270,40 +566,79 @@ public class MenuMethods {
             updateTracker(tracker); // prompt user again
         }
         
-        System.out.println("\nCurrent Rating: " + rating + " stars out of 5 "); 
-        
-        // ask for optional rating
-        int input = -1; 
-        // will repeat until user gives a valid response
-        while(!(input == 1 || input == 2)) {
-        	System.out.println("Update Rating?");
-        	System.out.println("1. Yes");
-    		System.out.println("2. No");
-        	try {
-	            input = sc.nextInt();
-	            
-	        } catch (InputMismatchException e) {
-	            System.out.println("\nInvalid input. Please select 1 (Yes) or 2 (No)");
-	            sc.next(); // clear invalid input
-	            continue; // prompt user again
-	        }                      
-        }
-        
-        if(input == 1) {
-        	while(!(rating > 0 && rating <=5)) {
-        		System.out.println("Enter New Rating (1 to 5): ");
-        		try {
-        			rating = sc.nextInt();
-        			
-        		} catch (InputMismatchException e) {
-    	            System.out.println("\nInvalid input. Please select 1-5");
+        if(rating == 0) {            
+            // ask for optional rating
+            input = -1; 
+            // will repeat until user gives a valid response
+            while(!(input == 1 || input == 2)) {
+            	System.out.println("Give Rating?");
+            	System.out.println("1. Yes");
+        		System.out.println("2. No");
+            	try {
+    	            input = sc.nextInt();
+    	            
+    	        } catch (InputMismatchException e) {
+    	            System.out.println("\nInvalid input. Please select 1 (Yes) or 2 (No)");
     	            sc.next(); // clear invalid input
     	            continue; // prompt user again
-    	        }  
-        	}
-        	
-        	tracker.setRating(rating);
+    	        }                      
+            }
+            
+            if(input == 1) {
+            	while(!(rating > 0 && rating <=5)) {
+            		System.out.println("Enter Rating (1 to 5): ");
+            		try {
+            			rating = sc.nextInt();
+            			
+            		} catch (InputMismatchException e) {
+        	            System.out.println("\nInvalid input. Please select 1-5");
+        	            sc.next(); // clear invalid input
+        	            continue; // prompt user again
+        	        }  
+            	}
+            	
+            	tracker.setRating(rating);
+            }
         }
+        
+        else {
+        	System.out.println("\nCurrent Rating: " + rating + " stars out of 5 "); 
+            
+            // ask for optional rating
+            input = -1; 
+            // will repeat until user gives a valid response
+            while(!(input == 1 || input == 2)) {
+            	System.out.println("Update Rating?");
+            	System.out.println("1. Yes");
+        		System.out.println("2. No");
+            	try {
+    	            input = sc.nextInt();
+    	            
+    	        } catch (InputMismatchException e) {
+    	            System.out.println("\nInvalid input. Please select 1 (Yes) or 2 (No)");
+    	            sc.next(); // clear invalid input
+    	            continue; // prompt user again
+    	        }                      
+            }
+            
+            if(input == 1) {
+            	while(!(rating > 0 && rating <=5)) {
+            		System.out.println("Enter New Rating (1 to 5): ");
+            		try {
+            			rating = sc.nextInt();
+            			
+            		} catch (InputMismatchException e) {
+        	            System.out.println("\nInvalid input. Please select 1-5");
+        	            sc.next(); // clear invalid input
+        	            continue; // prompt user again
+        	        }  
+            	}
+            	
+            	tracker.setRating(rating);
+            }
+        }
+        
+        
         
         if(tracker.isFavorite()) {
         	// ask for adding to favorites
@@ -364,9 +699,10 @@ public class MenuMethods {
         
 	}
 	
+	// method for users to make a new tracker
     public void newTracker(Category category, String categoryName) {
         try {
-        	// list of trackers under the selected category
+        	// list of topics under the selected category
             List<Topic> topics = topicDAO.getTopicsByCategory(category);
             String action = null;
             String actions = null;
@@ -415,6 +751,10 @@ public class MenuMethods {
                 for (Tracker tracker : userTrackers) {
                     if (tracker.getTopicID() == selectedTopic.getTopicID()) {
                         System.out.println("Already tracking this topic. See 'My Trackers' to update.");
+                        if(Menu.currentUser.getIsAdmin() == true) {
+                        	menu.adminMenu();
+                        }
+                        
                         menu.userMenu();
                     }
                 }
@@ -459,8 +799,6 @@ public class MenuMethods {
                 	        }
                     	}
                           
-                        //progress = sc.nextInt();
-                        //sc.nextLine();
                         
                         // ask for optional rating
                         int input = -1; 
@@ -569,13 +907,17 @@ public class MenuMethods {
                 newTracker.setRating(rating);
                 newTracker.setFavorite(favorite);
 
-                // Call the createTracker method, which will internally call updateProgressAndStatus
+                // call the createTracker method, which will internally call updateProgressAndStatus
                 trackerDAO.createTracker(newTracker);
 
                 System.out.println("New tracker created for " + selectedTopic.getTopicName());
             } 
             
             else if(inputTopic == topics.size() + 1) {
+            	if(Menu.currentUser.getIsAdmin() == true) {
+                	menu.adminMenu();
+                }
+            	
             	menu.userMenu();
             }
             
@@ -615,8 +957,7 @@ public class MenuMethods {
     	            System.out.println("\nInvalid input. Press 1 to Go Back.");
     	            sc.next(); // clear invalid input
     	            continue; // prompt user again
-    	        }
-           
+    	        }          
             }
             
             menu.myTrackers();
@@ -625,5 +966,396 @@ public class MenuMethods {
             e.printStackTrace();
         }
     }
+    
+    // admin only method to view users and their info, with passwords protected by hashing
+    public void viewUsers() {
+    	try {
+            List<User> users = userDAO.getAllUsers();
+            if (users != null) {
+                for (User user : users) {
+                    System.out.println(user);
+                }
+                
+                int input = 0;
+                System.out.println("\nMake new admin?");
+                System.out.println("1. Yes");
+                System.out.println("2. No");
+            	try {
+    	            input = sc.nextInt();
+    	           
+    	        } catch (InputMismatchException e) {
+    	            System.out.println("\nInvalid input");
+    	            sc.next(); // clear invalid input
+    	        }
+            	
+            	if(input == 1) {
+            		String newAdmin = null;
+            		System.out.println("Enter username of user to make new admin");
+            		try {
+        	            newAdmin = sc.next();
+        	           
+        	        } catch (InputMismatchException e) {
+        	            System.out.println("\nInvalid input");
+        	            sc.next(); // clear invalid input
+        	        }
+            		
+            		try {
+            			User user = userDAO.getUserByUsername(newAdmin);
+            			user.setIsAdmin(true);
+						userDAO.updateUser(user);
+						System.out.println("successfully added " + newAdmin + " as new admin");
+						
+					} catch (UserNotFoundException e) {
+						e.getMessage();
+					}
+            	}
+            	
+            	else {
+            		menu.adminMenu();
+            	} 
+            } 
+            
+            else {
+                System.out.println("No users found or error occurred.");
+            }
+        } catch (SQLException e) {
+            System.out.println("Failed to retrieve users.");
+            e.printStackTrace();
+        }
+    }
+    
+    // admin only method to create new topics
+    public void newTopic() {
+    	Category category = null;
+    	String artist = null;
+    	String topicName = null;
+    	int length = 0;
+    	
+    	System.out.println("Select a Category for New Topic:");
+		System.out.println("1. TV Show");
+		System.out.println("2. Book");
+		System.out.println("3. Music Album");
+		System.out.println("4. Cancel");
+		
+        int input = -1;
+        try {
+            input = sc.nextInt();
+            sc.nextLine(); // prevent infinite scanner loop
+        } catch (InputMismatchException e) {
+            System.out.println("\nInvalid input. Please enter a number (1-3).");
+            sc.next(); // clear invalid input
+            //continue; // prompt user again
+        }        
+
+		
+		switch (input) {
+		
+		case 1:
+			category = Category.SERIES;
+			System.out.println("Series Name: ");
+			topicName = sc.next();
+			
+			while(!(length > 0)) {
+				System.out.println("Number of Episodes: ");
+				input = -1;
+		        try {
+		            length = sc.nextInt();		            
+		        } catch (InputMismatchException e) {
+		            System.out.println("\nInvalid input. Please enter a number of episodes");
+		            sc.next(); // clear invalid input
+		        }        
+			}
+			
+			break;
+		case 2:
+			category = Category.BOOK;
+			System.out.println("Author Name: ");
+			artist = sc.next();
+			
+			System.out.println("Book Name: ");
+			topicName = artist + ": " + sc.next();
+			
+			while(!(length > 0)) {
+				System.out.println("Number of Pages: ");
+				input = -1;
+		        try {
+		            length = sc.nextInt();		            
+		        } catch (InputMismatchException e) {
+		            System.out.println("\nInvalid input. Please enter a number of episodes");
+		            sc.next(); // clear invalid input
+		        }        
+			}
+			
+			break;		
+		case 3:
+			category = Category.ALBUM;
+			System.out.println("Artist Name: ");
+			artist = sc.next();
+			
+			System.out.println("Album Name: ");
+			topicName = artist + ": " + sc.next();
+			
+			while(!(length > 0)) {
+				System.out.println("Number of Songs: ");
+				input = -1;
+		        try {
+		            length = sc.nextInt();		            
+		        } catch (InputMismatchException e) {
+		            System.out.println("\nInvalid input. Please enter a number of episodes");
+		            sc.next(); // clear invalid input
+		        }        
+			}
+			
+			break;
+		case 4:
+			menu.adminMenu();
+			break;
+		default:
+			System.out.println("\nPlease enter an option listed (number 1 - 4)");
+			break;
+		}
+		
+		Topic topic = new Topic(0, topicName, length, category);
+		
+		try {
+			topicDAO.createTopic(topic, Menu.currentUser);
+		} catch (SQLException | TopicNotCreatedException e) {
+			e.printStackTrace();
+		}
+		
+		System.out.println("New Topic Created Successfully");
+		
+		
+    }
+    
+    // update existing topic info - admin only
+    public void updateTopics(Category category) {
+    	String lengthUnit = null;
+   		if(category == Category.SERIES) {
+   			lengthUnit = "episodes";
+   		} 
+   		
+   		if(category == Category.BOOK) {
+   			lengthUnit = "pages";
+   		}
+   					
+   		if(category == Category.ALBUM) {
+   			lengthUnit = "songs";
+   		}
+    	
+	    List<Topic> topics;
+		try {
+			topics = topicDAO.getTopicsByCategory(category);
+			System.out.println("Select a " + category.getValue() + " to update:");
+		    
+	        for (int i = 0; i < topics.size(); i++) {
+	            System.out.println((i + 1) + ". " + topics.get(i).getTopicName());
+	        }
+	        
+	        System.out.println((topics.size() + 1) + ". Cancel");
+
+	        int inputTopic = -1;
+	        try {
+	            inputTopic = sc.nextInt();
+	            sc.nextLine(); // prevent infinite scanner loop
+	        } catch (InputMismatchException e) {
+	            System.out.println("\nInvalid input. Please enter a number");
+	            sc.next(); // clear invalid input
+	        }
+
+	        if (inputTopic > 0 && inputTopic <= topics.size()) {
+	            Topic selectedTopic = topics.get(inputTopic - 1);
+	    		// ask for action
+	            int input = -1; 
+	            // will repeat until user gives a valid response
+	            while(!(input == 1 || input == 2 || input == 3)) {
+	            	System.out.println("What would you like to do?");
+	            	System.out.println("1. Update Topic");
+	        		System.out.println("2. Delete Topic");
+	        		System.out.println("3. Cancel");
+	            	try {
+	    	            input = sc.nextInt();
+	    	            
+	    	        } catch (InputMismatchException e) {
+	    	            System.out.println("\nInvalid input. Please select 1 (Update) or 2 (Delete)");
+	    	            sc.next(); // clear invalid input
+	    	            continue; // prompt user again
+	    	        }                      
+	            }
+	            
+	            if(input == 2) {
+	            	input = -1; 
+	                // will repeat until user gives a valid response
+	                while(!(input == 1 || input == 2)) {
+	                	System.out.println("Are you sure you want to delete this topic?");
+	                	System.out.println("1. Yes");
+	            		System.out.println("2. No");
+	                	try {
+	        	            input = sc.nextInt();
+	        	            
+	        	        } catch (InputMismatchException e) {
+	        	            System.out.println("\nInvalid input. Please select 1 (Yes) or 2 (No)");
+	        	            sc.next(); // clear invalid input
+	        	            continue; // prompt user again
+	        	        }                      
+	                }
+	                
+	                if(input == 1) {
+	                	try {
+	        				topicDAO.deleteTopic(selectedTopic.getTopicID(), Menu.currentUser);
+	        			} catch (SQLException e) {
+	        				e.printStackTrace();
+	        			}
+	                	
+	                	System.out.println("Topic Successfully Deleted");
+	               
+	    					updateTopics(category);
+	    				
+	                }
+	                
+	                else if (input == 2){
+	               
+	                		updateTopics(category);
+	    				
+	                }
+	            }
+	            
+	            else if(input == 3) {
+	        
+	            		updateTopics(category);
+	    			
+	            }
+	             
+	            System.out.println("Current Name: " + selectedTopic.getTopicName());
+	           
+	            input = -1; 
+	            // will repeat until user gives a valid response
+	            while(!(input == 1 || input == 2)) {
+	            	System.out.println("\nUpdate " + selectedTopic.getCategory().getValue() + " name?");
+	            	System.out.println("1. Yes");
+	        		System.out.println("2. No");
+	            	try {
+	    	            input = sc.nextInt();
+	    	            
+	    	        } catch (InputMismatchException e) {
+	    	            System.out.println("\nInvalid input. Please select 1 (Yes) or 2 (No)");
+	    	            sc.next(); // clear invalid input
+	    	            continue; // prompt user again
+	    	        }                      
+	            }
+	            
+	            if(input == 1) {
+	            	System.out.println("Updated Name: ");
+					selectedTopic.setTopicName(sc.next());
+	            	System.out.println(selectedTopic.getCategory().getValue() + " Successfully Renamed");
+	            }
+	            
+	            
+	            System.out.println("\nCurrent Length: " + selectedTopic.getLength() + " " + lengthUnit);
+	            input = -1; 
+	            // will repeat until user gives a valid response
+	            while(!(input == 1 || input == 2)) {
+	            	System.out.println("\nUpdate " + selectedTopic.getCategory().getValue() + " length?");
+	            	System.out.println("1. Yes");
+	        		System.out.println("2. No");
+	            	try {
+	    	            input = sc.nextInt();
+	    	            
+	    	        } catch (InputMismatchException e) {
+	    	            System.out.println("\nInvalid input. Please select 1 (Yes) or 2 (No)");
+	    	            sc.next(); // clear invalid input
+	    	            continue; // prompt user again
+	    	        }                      
+	            }
+	            
+	            if(input == 1) {            	            	          		
+	            	
+	            	int newLength = -1;
+	            	boolean validInput = false;
+	            	while(!validInput) {
+	            		System.out.println("Updated Length: ");
+	            		try {
+	                		newLength = sc.nextInt();
+	                		validInput = true;
+	                	} catch (InputMismatchException e) {
+	        	            System.out.println("\nInvalid input. Enter a number");
+	        	            sc.next(); // clear invalid input
+	        	        }                 	
+	            	}
+	            	
+	            	selectedTopic.setLength(newLength);
+	            	System.out.println("New Length Set Successfully");
+	            }
+	            
+	            System.out.println("\nCurrent Category: " + selectedTopic.getCategory().getValue());
+	            input = -1; 
+	            // will repeat until user gives a valid response
+	            while(!(input == 1 || input == 2)) {
+	            	System.out.println("\nUpdate topic category?");
+	            	System.out.println("1. Yes");
+	        		System.out.println("2. No");
+	            	try {
+	    	            input = sc.nextInt();
+	    	            
+	    	        } catch (InputMismatchException e) {
+	    	            System.out.println("\nInvalid input. Please select 1 (Yes) or 2 (No)");
+	    	            sc.next(); // clear invalid input
+	    	            continue; // prompt user again
+	    	        }                      
+	            }
+	            
+	            if(input == 1) {    
+	        		
+	            	input = -1; // reset input
+	            	
+	            	while(!(input == 1 || input == 2 || input == 3)) {
+	                	System.out.println("Select New Category (or choose current to cancel update):");
+	                	System.out.println("1. TV Show");
+	            		System.out.println("2. Book");
+	            		System.out.println("2. Music Album");
+	                	try {
+	        	            input = sc.nextInt();
+	        	            if(input == 1) {
+	        	            	selectedTopic.setCategory(Category.SERIES);
+	        	            }	
+	        	            
+	        	            else if(input == 2) {
+	        	            	selectedTopic.setCategory(Category.BOOK);
+	        	            }
+	        	            
+	        	            else if(input == 3) {
+	        	            	selectedTopic.setCategory(Category.ALBUM);
+	        	            }
+	        	            
+	        	        } catch (InputMismatchException e) {
+	        	            System.out.println("\nInvalid input. Please select 1 for Series, 2 for Book, or 3 for Album");
+	        	            sc.next(); // clear invalid input
+	        	            continue; // prompt user again
+	        	        }                      
+	                }
+	            }
+	            
+	           topicDAO.updateTopic(selectedTopic, Menu.currentUser);
+	           System.out.println("Topic Successfully Updated"); 
+	           
+	           updateTopics(category);
+	        }                    
+	        
+	        else if(inputTopic == topics.size() + 1) {
+	        	menu.adminMenu();
+	        }
+	        
+	        else {
+	        	System.out.println("invalid selection - please try again");
+	            updateTopics(category);
+	        }  
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	    
+	    
+                  
+	}
 
 }

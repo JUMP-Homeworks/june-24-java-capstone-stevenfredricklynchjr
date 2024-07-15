@@ -14,6 +14,12 @@ import com.cognixia.jump.dao.TrackerDAOClass;
  * 
  * Used to boot up the project with the initial main menu
  * 
+ * NOTE: For initial admin activity, login with testadmin | testadminpassword
+ * 		 New admins can only be created by an admin setting an existing user to isAdmin
+ * 
+ * 		 Comes loaded initially with 3 test users and 1 admin user, you can add more 
+ * 		 users and trackers via the console menu
+ * 
  */
 
 public class Main {

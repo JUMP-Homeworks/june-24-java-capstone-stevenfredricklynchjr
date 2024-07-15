@@ -24,7 +24,6 @@ import com.cognixia.jump.exception.TopicNotFoundException;
 public class TopicDAOClass implements TopicDAO{
 
 	private Connection conn = null;
-	private UserDAO userDAO;
 	
 
 	
@@ -182,7 +181,7 @@ public class TopicDAOClass implements TopicDAO{
 	@Override
 	public void createTopic(Topic topic, User admin) throws SQLException, TopicNotCreatedException {
 		// check that user is an admin with privilege to create new topic
-		if(!userDAO.isAdmin(admin)) {
+		if(!admin.getIsAdmin() == true) {
 			throw new SQLException("User not authorized to create topic");
 		}
 		
@@ -206,7 +205,7 @@ public class TopicDAOClass implements TopicDAO{
 	@Override
 	public boolean deleteTopic(int topicID, User admin) throws SQLException {
 		// check that user is an admin with privilege to delete topic
-		if(!userDAO.isAdmin(admin)) {
+		if(!admin.getIsAdmin() == true) {
 			throw new SQLException("User not authorized to delete topic");
 		}
 		
@@ -233,16 +232,16 @@ public class TopicDAOClass implements TopicDAO{
 	@Override
 	public boolean updateTopic(Topic topic, User admin) throws SQLException {
 		// check that user is an admin with privilege to edit topic data
-		if(!userDAO.isAdmin(admin)) {
+		if(!admin.getIsAdmin() == true) {
 			throw new SQLException("User not authorized to delete topic");
 		}
 		
 		try {
 			// set up prepared statement to update a topic
 			PreparedStatement pstmt = conn.prepareStatement("UPDATE topic SET topic_name = ?, length = ?, category = ? WHERE topic_id = ?");
-			pstmt.setString(1,  topic.getTopicName());
-			pstmt.setString(2,  topic.getCategory().getValue());
-			pstmt.setInt(3, topic.getLength());
+			pstmt.setString(1,  topic.getTopicName());			
+			pstmt.setInt(2, topic.getLength());
+			pstmt.setString(3,  topic.getCategory().getValue());
 			pstmt.setInt(4, topic.getTopicID());
 			
 			int i = pstmt.executeUpdate();

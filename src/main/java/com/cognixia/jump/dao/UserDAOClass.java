@@ -250,28 +250,55 @@ public class UserDAOClass implements UserDAO{
 
 	// edit user info
 	@Override
-	public boolean updateUser(User user) throws SQLException {
-		try {
-			// set up prepared statement to update a user's info
-			PreparedStatement pstmt = conn.prepareStatement("UPDATE users SET username = ?, password_hash = ?, is_admin = ? WHERE user_id = ?");
-			pstmt.setString(1,  user.getUsername());
-			pstmt.setString(2,  user.getPasswordHash());
-			pstmt.setBoolean(3,  user.getIsAdmin());
-			pstmt.setInt(4, user.getUserID());
-			
-			int i = pstmt.executeUpdate();
-			
-			if(i > 0) {
-				return true;
-			}
-			
-		} catch(SQLException e) {
-			e.printStackTrace();
-		}
-		
-		// return false if update fails
-		return false;
+	public boolean updateUser(User user, String plainTextPassword) throws SQLException {
+	    String hashedPassword = PasswordUtil.hashPassword(plainTextPassword);
+	    try {
+	        // set up prepared statement to update a user's info
+	        PreparedStatement pstmt = conn.prepareStatement("UPDATE users SET username = ?, password_hash = ?, is_admin = ? WHERE user_id = ?");
+	        pstmt.setString(1, user.getUsername());
+	        pstmt.setString(2, hashedPassword);
+	        pstmt.setBoolean(3, user.getIsAdmin());
+	        pstmt.setInt(4, user.getUserID());
+
+	        int i = pstmt.executeUpdate();
+
+	        if (i > 0) {
+	            return true;
+	        }
+
+	    } catch (SQLException e) {
+	        e.printStackTrace();
+	        throw e;
+	    }
+
+	    // return false if update fails
+	    return false;
 	}
+
+	@Override
+	public boolean updateUser(User user) throws SQLException {
+	    try {
+	        // set up prepared statement to update a user's info without changing the password
+	        PreparedStatement pstmt = conn.prepareStatement("UPDATE users SET username = ?, is_admin = ? WHERE user_id = ?");
+	        pstmt.setString(1, user.getUsername());
+	        pstmt.setBoolean(2, user.getIsAdmin());
+	        pstmt.setInt(3, user.getUserID());
+
+	        int i = pstmt.executeUpdate();
+
+	        if (i > 0) {
+	            return true;
+	        }
+
+	    } catch (SQLException e) {
+	        e.printStackTrace();
+	        throw e;
+	    }
+
+	    // return false if update fails
+	    return false;
+	}
+
 	
 	// create an admin user that is able to add, remove, and edit topic information 
 	@Override
