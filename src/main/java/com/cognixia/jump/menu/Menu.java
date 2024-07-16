@@ -1,13 +1,20 @@
 package com.cognixia.jump.menu;
 
 import java.sql.SQLException;
+import java.util.AbstractMap;
+import java.util.ArrayList;
 import java.util.InputMismatchException;
+import java.util.List;
+import java.util.Map;
 import java.util.Scanner;
 
 import com.cognixia.jump.dao.User;
 import com.cognixia.jump.dao.UserDAO;
+import com.cognixia.jump.exception.TopicNotFoundException;
 import com.cognixia.jump.dao.Topic.Category;
 import com.cognixia.jump.dao.TopicDAO;
+import com.cognixia.jump.dao.TopicDAOClass;
+import com.cognixia.jump.dao.Tracker;
 import com.cognixia.jump.dao.Tracker.UserStatus;
 import com.cognixia.jump.dao.TrackerDAO;
 import com.cognixia.jump.dao.TrackerDAOClass;
@@ -33,10 +40,11 @@ public class Menu {
     private TrackerDAO trackerDAO = new TrackerDAOClass();
     public static User currentUser;
     private MenuMethods menuMethods;
-
+    private TopicDAO topicDAO = new TopicDAOClass();
     // constructor
     public Menu(UserDAO userDAO, TopicDAO topicDAO, TrackerDAO trackerDAO) {
         this.trackerDAO = trackerDAO;
+        this.topicDAO = topicDAO;
         this.sc = new Scanner(System.in);
         this.menuMethods = new MenuMethods(sc, userDAO, trackerDAO, topicDAO, this);
     }
@@ -339,14 +347,15 @@ public class Menu {
     	System.out.println("\nPlease Select from the Menu Below");
 		System.out.println("1. Manage Trackers");
 		System.out.println("2. View Favorites");
-		System.out.println("3. Go Back");
+		System.out.println("3. Activate Tracker UI Mode"); // provides an interactive graphical representation of all of the user's trackers
+		System.out.println("4. Go Back");
 		
         int input = -1;
         try {
             input = sc.nextInt();
             sc.nextLine(); // prevent infinite scanner loop
         } catch (InputMismatchException e) {
-            System.out.println("\nInvalid input. Please enter a number (1-3).");
+            System.out.println("\nInvalid input. Please enter a number (1-4).");
             sc.next(); // clear invalid input
             //continue; // prompt user again
         }
@@ -359,7 +368,9 @@ public class Menu {
 		case 2:
 			menuMethods.viewFavorites();
 			break;
-		case 3:
+		case 3: 
+			displayTrackerUI();
+		case 4:
 			if(currentUser.getIsAdmin()){
 				adminMenu();
 			}
@@ -367,7 +378,7 @@ public class Menu {
 			break;
 
 		default:
-			System.out.println("\nPlease enter an option listed (number 1 - 3)");
+			System.out.println("\nPlease enter an option listed (number 1 - 4)");
 			break;
 		}
     	
@@ -433,6 +444,45 @@ public class Menu {
     	
 		
 	}
+	
+	// displays the user interface
+    public void displayTrackerUI() {
+        List<Map.Entry<String, Double>> userProgressListWithTitles = getUserTrackerProgressListWithTitles();
+        TrackerUI.setProgressListWithTitles(userProgressListWithTitles);
+
+        TrackerUI trackerUI = new TrackerUI();
+        trackerUI.displayUI();
+
+        while (TrackerUI.isRunning()) {
+            try {
+                Thread.sleep(100); // Check every 100ms
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    // gathers data for user trackers and performs calculations to display in user interface
+    private List<Map.Entry<String, Double>> getUserTrackerProgressListWithTitles() {
+        List<Map.Entry<String, Double>> progressListWithTitles = new ArrayList<>();
+        try {
+            List<Tracker> trackers = trackerDAO.getAllTrackersByUser(currentUser);
+            for (Tracker tracker : trackers) {
+                // Retrieve progress and length for each tracker in the loop
+                int prog = tracker.getProgress();
+                int len = topicDAO.getTopicByID(tracker.getTopicID()).getLength();
+
+                String title = topicDAO.getTopicByID(tracker.getTopicID()).getTopicName();
+                double progressPercent = (double) prog / (double) len;
+                progressListWithTitles.add(new AbstractMap.SimpleEntry<>(title, progressPercent));
+            }
+        } catch (SQLException | TopicNotFoundException e) {
+            e.printStackTrace();
+        }
+
+        return progressListWithTitles;
+    }
+
 	
 	// menu for selecting status of trackers to view
 	public void viewTrackersStatusMenu(Category category) {
