@@ -41,6 +41,8 @@ CREATE TABLE tracker (
 
 INSERT INTO users (username, password_hash, is_admin) VALUES ('testadmin', 'testadminpassword', TRUE);
 INSERT INTO users (username, password_hash, is_admin) VALUES ('testuser', 'testuserpassword', FALSE);
+INSERT INTO users (username, password_hash, is_admin) VALUES ('testuser2', 'testuser2password', FALSE);
+INSERT INTO users (username, password_hash, is_admin) VALUES ('testuser3', 'testuser3password', FALSE);
 
 INSERT INTO topic (topic_name, length, category) VALUES ('Breaking Bad', 62, 'Series');
 INSERT INTO topic (topic_name, length, category) VALUES ('The Sopranos', 86, 'Series');
@@ -74,9 +76,35 @@ INSERT INTO topic (topic_name, length, category) VALUES ('The Doors: The Doors',
 INSERT INTO topic (topic_name, length, category) VALUES ('Madvillain: Madvillainy', 22, 'Album');
 
 INSERT INTO tracker(user_status, progress, rating, favorite, user_id, topic_id) VALUES ('in-progress', 15, 5, TRUE, 1, 9);
-INSERT INTO tracker(user_status, progress, rating, favorite, user_id, topic_id) VALUES ('in-progress', 15, 5, TRUE, 1, 20);
-INSERT INTO tracker(user_status, progress, rating, favorite, user_id, topic_id) VALUES ('in-progress', 10, 5, TRUE, 1, 22);
+INSERT INTO tracker(user_status, progress, rating, favorite, user_id, topic_id) VALUES ('in-progress', 15, 4, TRUE, 1, 20);
+INSERT INTO tracker(user_status, progress, rating, favorite, user_id, topic_id) VALUES ('in-progress', 10, 3, FALSE, 1, 22);
 
-INSERT INTO tracker(user_status, progress, rating, favorite, user_id, topic_id) VALUES ('not started', 0, NULL, FALSE, 2, 9);
-INSERT INTO tracker(user_status, progress, rating, favorite, user_id, topic_id) VALUES ('in-progress', 55, NULL, FALSE, 2, 20);
-INSERT INTO tracker(user_status, progress, rating, favorite, user_id, topic_id) VALUES ('completed', NULL, 5, TRUE, 2, 22);
+INSERT INTO tracker(user_status, progress, rating, favorite, user_id, topic_id) VALUES ('completed', 62, 4, TRUE, 2, 1);
+INSERT INTO tracker(user_status, progress, rating, favorite, user_id, topic_id) VALUES ('in-progress', 70, 4, TRUE, 2, 2);
+INSERT INTO tracker(user_status, progress, rating, favorite, user_id, topic_id) VALUES ('not started', 0, 0, FALSE, 2, 3);
+INSERT INTO tracker(user_status, progress, rating, favorite, user_id, topic_id) VALUES ('completed', 752, 3, FALSE, 2, 11);
+INSERT INTO tracker(user_status, progress, rating, favorite, user_id, topic_id) VALUES ('in-progress', 100, 4, TRUE, 2, 12);
+INSERT INTO tracker(user_status, progress, rating, favorite, user_id, topic_id) VALUES ('completed', 188, 1, FALSE, 2, 8);
+INSERT INTO tracker(user_status, progress, rating, favorite, user_id, topic_id) VALUES ('not started', 0, 0, FALSE, 2, 9);
+INSERT INTO tracker(user_status, progress, rating, favorite, user_id, topic_id) VALUES ('in-progress', 55, 0, FALSE, 2, 20);
+INSERT INTO tracker(user_status, progress, rating, favorite, user_id, topic_id) VALUES ('completed', 11, 5, TRUE, 2, 22);
+
+INSERT INTO tracker(user_status, progress, rating, favorite, user_id, topic_id) VALUES ('completed', 62, 5, TRUE, 3, 1);
+INSERT INTO tracker(user_status, progress, rating, favorite, user_id, topic_id) VALUES ('in-progress', 50, 3, FALSE, 3, 2);
+INSERT INTO tracker(user_status, progress, rating, favorite, user_id, topic_id) VALUES ('in-progress', 19, 0, FALSE, 3, 3);
+INSERT INTO tracker(user_status, progress, rating, favorite, user_id, topic_id) VALUES ('completed', 752, 3, FALSE, 3, 11);
+INSERT INTO tracker(user_status, progress, rating, favorite, user_id, topic_id) VALUES ('in-progress', 100, 4, TRUE, 3, 12);
+INSERT INTO tracker(user_status, progress, rating, favorite, user_id, topic_id) VALUES ('completed', 188, 1, FALSE, 3, 8);
+INSERT INTO tracker(user_status, progress, rating, favorite, user_id, topic_id) VALUES ('not started', 0, 0, FALSE, 3, 9);
+INSERT INTO tracker(user_status, progress, rating, favorite, user_id, topic_id) VALUES ('in-progress', 55, 0, FALSE, 3, 20);
+INSERT INTO tracker(user_status, progress, rating, favorite, user_id, topic_id) VALUES ('completed', 11, 5, TRUE, 3, 22);
+
+INSERT INTO tracker(user_status, progress, rating, favorite, user_id, topic_id) VALUES ('completed', 62, 4, TRUE, 4, 1);
+INSERT INTO tracker(user_status, progress, rating, favorite, user_id, topic_id) VALUES ('in-progress', 70, 4, TRUE, 4, 2);
+INSERT INTO tracker(user_status, progress, rating, favorite, user_id, topic_id) VALUES ('not started', 0, 0, FALSE, 4, 3);
+INSERT INTO tracker(user_status, progress, rating, favorite, user_id, topic_id) VALUES ('completed', 752, 5, TRUE, 4, 11);
+INSERT INTO tracker(user_status, progress, rating, favorite, user_id, topic_id) VALUES ('in-progress', 120, 5, TRUE, 4, 17);
+INSERT INTO tracker(user_status, progress, rating, favorite, user_id, topic_id) VALUES ('in-progress', 100, 5, TRUE, 4, 19);
+INSERT INTO tracker(user_status, progress, rating, favorite, user_id, topic_id) VALUES ('not started', 0, 0, FALSE, 4, 9);
+INSERT INTO tracker(user_status, progress, rating, favorite, user_id, topic_id) VALUES ('in-progress', 55, 0, FALSE, 4, 20);
+INSERT INTO tracker(user_status, progress, rating, favorite, user_id, topic_id) VALUES ('completed', 18, 2, FALSE, 4, 25);

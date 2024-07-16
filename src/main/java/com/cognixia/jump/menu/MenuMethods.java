@@ -338,8 +338,8 @@ public class MenuMethods {
 	// method from account settings to allow users to change their username
 	public void editUsername() {
 		System.out.println("\nEnter password to make changes: ");
-		String plainTextPassword = sc.next();
 		try {
+			String plainTextPassword = sc.next();
 			if(userDAO.authenticateUser(Menu.currentUser.getUsername(), plainTextPassword)) {	
 				System.out.println("Current Username: " + Menu.currentUser.getUsername());
 				System.out.println("Enter new Username: ");
@@ -348,91 +348,81 @@ public class MenuMethods {
 				userDAO.updateUser(Menu.currentUser);
 			}
 			
-			else {
-				int input = -1; 
-	            // will repeat until user gives a valid response
-	            while(!(input == 1 || input == 2)) {
-	            	System.out.println("Incorrect Password");
-	            	System.out.println("1. Try Again");
-	        		System.out.println("2. Cancel");
-	            	try {
-	    	            input = sc.nextInt();
-	    	            
-	    	        } catch (InputMismatchException e) {
-	    	            System.out.println("\nInvalid input. Please select 1 or 2");
-	    	            sc.next(); // clear invalid input
-	    	            continue; // prompt user again
-	    	        }                      
-	            }
-	            
-	            if(input == 1) {
-	            	editUsername();	            		          
-	            }
-	            
-	            else {
-	            	if(Menu.currentUser.getIsAdmin()) {
-	            		menu.adminMenu();
-	            	}
-	            	
-	            	menu.userMenu();
-	            }
-			}
-			
-		} catch (SQLException | UserNotFoundException | InvalidPasswordException e) {
+		} catch (SQLException | UserNotFoundException e) {
 			e.printStackTrace();
-		}
+		} catch (InvalidPasswordException e) {
+	        System.out.println("Incorrect Password.");
+	        // Allow the user to try again or cancel
+	        int input = -1;
+	        while (!(input == 1 || input == 2)) {
+	            System.out.println("1. Try Again");
+	            System.out.println("2. Cancel");
+	            try {
+	                input = sc.nextInt();
+	            } catch (InputMismatchException ex) {
+	                System.out.println("\nInvalid input. Please select 1 or 2");
+	                sc.next(); // clear invalid input
+	                continue; // prompt user again
+	            }
+	        }
+
+	        if (input == 1) {
+	            editPassword(); // Recursively call the method to try again
+	        } else {
+	            if (Menu.currentUser.getIsAdmin()) {
+	                menu.adminMenu();
+	            } else {
+	                menu.userMenu();
+	            }
+	        }
+	    }
 		
 		
 	}
 	
 	// method from account settings to allow users to change their password
 	public void editPassword() {
-		System.out.println("\nEnter Current password to make changes: ");
-		String plainTextPassword = sc.next();
-		try {
-			if(userDAO.authenticateUser(Menu.currentUser.getUsername(), plainTextPassword)) {	
-				System.out.println("Enter new Password: ");
-				String newPassword = sc.next();
-		
-				userDAO.updateUser(Menu.currentUser, newPassword);
-			}
-			
-			else {
-				int input = -1; 
-	            // will repeat until user gives a valid response
-	            while(!(input == 1 || input == 2)) {
-	            	System.out.println("Incorrect Password");
-	            	System.out.println("1. Try Again");
-	        		System.out.println("2. Cancel");
-	            	try {
-	    	            input = sc.nextInt();
-	    	            
-	    	        } catch (InputMismatchException e) {
-	    	            System.out.println("\nInvalid input. Please select 1 or 2");
-	    	            sc.next(); // clear invalid input
-	    	            continue; // prompt user again
-	    	        }                      
+	    System.out.println("\nEnter Current password to make changes: ");
+
+	    try {
+	        String plainTextPassword = sc.next();
+	        if (userDAO.authenticateUser(Menu.currentUser.getUsername(), plainTextPassword)) {	
+	            System.out.println("Enter new Password: ");
+	            String newPassword = sc.next();
+	            userDAO.updateUser(Menu.currentUser, newPassword);
+	            System.out.println("Password updated successfully.");
+	        }
+
+	    } catch (SQLException | UserNotFoundException e) {
+	        e.printStackTrace();
+	    } catch (InvalidPasswordException e) {
+	        System.out.println("Incorrect Password.");
+	        // Allow the user to try again or cancel
+	        int input = -1;
+	        while (!(input == 1 || input == 2)) {
+	            System.out.println("1. Try Again");
+	            System.out.println("2. Cancel");
+	            try {
+	                input = sc.nextInt();
+	            } catch (InputMismatchException ex) {
+	                System.out.println("\nInvalid input. Please select 1 or 2");
+	                sc.next(); // clear invalid input
+	                continue; // prompt user again
 	            }
-	            
-	            if(input == 1) {
-	            	editUsername();	            		          
+	        }
+
+	        if (input == 1) {
+	            editPassword(); // Recursively call the method to try again
+	        } else {
+	            if (Menu.currentUser.getIsAdmin()) {
+	                menu.adminMenu();
+	            } else {
+	                menu.userMenu();
 	            }
-	            
-	            else {
-	            	if(Menu.currentUser.getIsAdmin()) {
-	            		menu.adminMenu();
-	            	}
-	            	
-	            	menu.userMenu();
-	            }
-			}
-			
-		} catch (SQLException | UserNotFoundException | InvalidPasswordException e) {
-			e.printStackTrace();
-		}
-		
-		
+	        }
+	    }
 	}
+
 	
 	// method to allow users to make changes to their trackers, especially for updating progress
 	public void updateTracker(Tracker tracker) {
